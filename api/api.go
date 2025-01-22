@@ -58,7 +58,13 @@ func (s *APIServer) RegisterRoute(path string, handler func(http.ResponseWriter,
 	s.logger.Printf("Route registered: %s", path)
 }
 
-func (s *APIServer) Start() error {
+func (s *APIServer) Start(timeouts ...time.Duration) error {
+	// Default timeout if none is provided
+	timeout := 5 * time.Second
+	if len(timeouts) > 0 {
+		timeout = timeouts[0]
+	}
+
 	log.Printf("Starting server on %s...", s.server.Addr)
 
 	stop := make(chan os.Signal, 1)
@@ -73,7 +79,7 @@ func (s *APIServer) Start() error {
 	select {
 	case <-stop:
 		log.Println("Shutting down gracefully...")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		if err := s.server.Shutdown(ctx); err != nil {
 			return err
