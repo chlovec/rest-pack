@@ -1,0 +1,67 @@
+{
+    // "gopls": {
+    //   "build.experimentalWorkspaceModule": true
+    // },
+    // "go.lintTool": "golangci-lint",
+    // "go.formatTool": "goimports",
+    // "editor.formatOnSave": true,
+    // "editor.codeActionsOnSave": {
+    //   "source.organizeImports": true,
+    //   "source.fixAll": true
+    // },
+    // "go.useLanguageServer": true
+    
+    // prevent automatic formatting on code
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    // remove any code actions that are configured to run on save
+    "editor.codeActionsOnSave": [],
+    // put a ruler on the editing screen at 120 characters
+    "editor.rulers": [120],
+
+  // go specific settings
+    "[go]": {
+      "editor.formatOnSave": true, 
+      "editor.defaultFormatter": "golang.go",
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit",
+        "source.fixAll": "explicit"
+      },
+      // "editor.codeActionsOnSave.source.fixAll.exclude": [
+      //   "**/*.test.go", 
+      //   "**/*.example_test.go" 
+      // ] 
+    },
+    //make sure the go language server is enabled
+    "go.useLanguageServer": true,
+    // configure gopls, the go language server
+    "gopls": {
+      "ui.semanticTokens": true,
+      "ui.completion.usePlaceholders": true
+    },
+    // configure the go formatting tool to be goimports
+    "go.formatTool": "goimports",
+    "go.formatFlags": [
+      "-local",
+      "github.com/takt-corp/"
+    ],
+
+    // change the linting tool to be golangci
+    "go.lintTool": "golangci-lint",
+    "go.lintOnSave": "workspace",
+    "go.lintFlags": [
+      "--fast"
+    ],
+    // configure the tags we want to add by default
+    "go.addTags": {
+      "tags": "json,validate",
+      "options": "json=omitempty,validate=omitempty",
+      "promptForTags": false,
+      "transform": "snakecase",
+      "template": ""
+    },
+    // dont run code coverage on save
+    "go.coverOnSave": false,
+  }
+  
