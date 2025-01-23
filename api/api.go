@@ -39,7 +39,7 @@ func NewAPIServer(addr string, pathPrefix string, logger *log.Logger) *APIServer
 	}
 }
 
-func (s *APIServer) RegisterRoute(path string, handler func(http.ResponseWriter, *http.Request, *log.Logger)) {
+func (s *APIServer) RegisterRoute(path string, handler func(http.ResponseWriter, *http.Request, *log.Logger), methods ...string) {
 	if path == "" {
 		s.logger.Println("Cannot register a route with an empty path")
 		return
@@ -54,7 +54,7 @@ func (s *APIServer) RegisterRoute(path string, handler func(http.ResponseWriter,
 		handler(w, r, s.logger)
 	}
 
-	s.apiSubrouter.HandleFunc(path, wrappedHandler)
+	s.apiSubrouter.HandleFunc(path, wrappedHandler).Methods(methods...)
 	s.logger.Printf("Route registered: %s", path)
 }
 
