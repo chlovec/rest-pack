@@ -65,7 +65,7 @@ func (s *APIServer) Start(timeouts ...time.Duration) error {
 		timeout = timeouts[0]
 	}
 
-	log.Printf("Starting server on %s...", s.server.Addr)
+	s.logger.Printf("Starting server on %s...", s.server.Addr)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
@@ -78,13 +78,13 @@ func (s *APIServer) Start(timeouts ...time.Duration) error {
 
 	select {
 	case <-stop:
-		log.Println("Shutting down gracefully...")
+		s.logger.Println("Shutting down gracefully...")
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 		if err := s.server.Shutdown(ctx); err != nil {
 			return err
 		}
-		log.Println("Server stopped gracefully.")
+		s.logger.Println("Server stopped gracefully.")
 		return nil
 	case err := <-errChan:
 		return err
