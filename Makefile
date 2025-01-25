@@ -1,8 +1,8 @@
-build:
-	@go build -o bin/example example/main.go
+example-mysql:
+	@go run examples/mysql/main.go
 
-run: build
-	@./bin/example
+example-api:
+	@go run examples/api/main.go
 
 test:
 	@go test -coverprofile=coverage.out -v ./...
