@@ -19,7 +19,7 @@ func TestRegisterRoute(t *testing.T) {
 		server := NewAPIServer(":8080", "/api", logger)
 
 		// Define a test handler
-		testHandler := func(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+		testHandler := func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("Hello, World!"))
 		}
@@ -55,7 +55,7 @@ func TestRegisterRoute(t *testing.T) {
 		server := NewAPIServer(":8080", "", logger)
 
 		// Define a test handler
-		testHandler := func(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+		testHandler := func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusCreated)
 			w.Write([]byte("Hello, World!"))
 		}
@@ -91,7 +91,7 @@ func TestRegisterRoute(t *testing.T) {
 		server := NewAPIServer(":8080", "", logger)
 
 		// Define a test handler
-		testHandler := func(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+		testHandler := func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("Hello, World!"))
 		}
@@ -122,7 +122,7 @@ func TestRegisterRoute(t *testing.T) {
 		server := NewAPIServer(":8080", "", logger)
 
 		// Define a test handler
-		testHandler := func(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+		testHandler := func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("Hello, World!"))
 		}
@@ -157,7 +157,7 @@ func TestRegisterRoute(t *testing.T) {
 		logger, logBuffer := initLog()
 		server := NewAPIServer(":8080", "/api", logger)
 		// Attempt to register a route with an empty path
-		server.RegisterRoute("", func(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+		server.RegisterRoute("", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}, http.MethodGet)
 
@@ -191,7 +191,7 @@ func TestAPIServerStart(t *testing.T) {
 	apiServer := NewAPIServer(serverAddr, "", logger)
 
 	// Mock route to ensure the server is running
-	apiServer.RegisterRoute("/health", func(w http.ResponseWriter, r *http.Request, logger *log.Logger) {
+	apiServer.RegisterRoute("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}, "GET")
 
