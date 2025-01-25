@@ -20,7 +20,7 @@ type Config struct {
 var Envs = initConfig()
 
 func initConfig() Config {
-	godotenv.Load("example_rest_api/.env")
+	godotenv.Load("examples/.env")
 	return Config {
 		DBHost:               os.Getenv("DB_HOST"),
 		DBPort:               os.Getenv("DB_PORT"),

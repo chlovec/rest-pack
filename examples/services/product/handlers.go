@@ -41,11 +41,8 @@ func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(products); err != nil {
 		// Handle JSON encoding errors
-		h.logger.Println("Error encoding product to JSON:", err)
-		http.Error(w, "Failed to retrieve product", http.StatusInternalServerError)
+		h.logger.Println("Error encoding products to JSON:", err)
+		http.Error(w, "Failed to retrieve products", http.StatusInternalServerError)
 		return
 	}
-
-	// Write a successful response
-	w.WriteHeader(http.StatusOK)
 }

@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/chlovec/rest-pack/api"
-	"github.com/chlovec/rest-pack/example_rest_api/config"
-	"github.com/chlovec/rest-pack/example_rest_api/services/product"
+	"github.com/chlovec/rest-pack/examples/config"
+	"github.com/chlovec/rest-pack/examples/services/product"
 )
 
 func main() {
