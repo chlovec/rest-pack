@@ -2,7 +2,7 @@ example-mysql:
 	@go run examples/mysql/main.go
 
 example-api:
-	@go run examples/api/main.go
+	@go run example_rest_api/cmd/main.go
 
 test:
 	@go test -coverprofile=coverage.out -v ./...
