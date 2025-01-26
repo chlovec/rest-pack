@@ -12,7 +12,6 @@ type Config struct {
 	DBPort        string
 	DBUser        string
 	DBPassword 	  string
-	DBAddress     string
 	DBName        string
 	ServerAddress string
 }
@@ -25,13 +24,12 @@ func initConfig() Config {
 		DBHost:               os.Getenv("DB_HOST"),
 		DBPort:               os.Getenv("DB_PORT"),
 		DBUser:               os.Getenv("DB_USER"),
-		DBAddress:            os.Getenv("DB_PASSWORD"),
+		DBPassword:           os.Getenv("DB_PASSWORD"),
 		DBName:               os.Getenv("DB_NAME"),
 		ServerAddress:        os.Getenv("SERVER_ADDR"),
 	}
 }
 
 func GetDataSourceName() string {
-	// username:password@tcp(host:port)/database?parseTime=true&AllowNativePasswords=true
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&AllowNativePasswords=true", Envs.DBUser, Envs.DBPassword, Envs.DBHost, Envs.DBPort, Envs.DBName)
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", Envs.DBUser, Envs.DBPassword, Envs.DBHost, Envs.DBPort, Envs.DBName)
 }

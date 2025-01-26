@@ -12,6 +12,7 @@ import (
 
 type Handler struct {
 	logger *log.Logger
+	store types.ProductStore
 }
 
 type Product struct {
@@ -21,8 +22,11 @@ type Product struct {
 	Qty   int     `json:"qty"`
 }
 
-func NewHandler(logger *log.Logger) *Handler {
-	return &Handler{}
+func NewHandler(logger *log.Logger, store types.ProductStore) *Handler {
+	return &Handler{
+		logger: logger,
+		store: store,
+	}
 }
 
 func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
@@ -42,9 +46,17 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// use store to create the product on the db
+	
 
 	// Write response
-	productID := 123
+	productID, err := h.store.CreateProduct(product);
+	if err != nil {
+		h.logger.Printf("error creating product: %v", err)
+		error := fmt.Errorf("Internal Server Error")
+		utils.WriteErrorJSON(w, http.StatusInternalServerError, error, nil)
+		return
+	}
+
 	baseURL := "http://example.com/api/v1/products"
 	newProductURL := fmt.Sprintf("%s/%d", baseURL, productID)
 	w.Header().Set("Location", newProductURL)

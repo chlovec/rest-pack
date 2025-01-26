@@ -12,6 +12,12 @@ type Product struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+// Stores
+type ProductStore interface {
+	CreateProduct(CreateProductPayload) (int, error)
+}
+
+// Payloads
 type CreateProductPayload struct {
 	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
