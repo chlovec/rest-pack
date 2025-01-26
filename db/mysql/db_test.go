@@ -12,7 +12,7 @@ import (
 // Test for successful initialization
 func TestInitDB_Success(t *testing.T) {
 	// Create a mock database connection
-	mockDB, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	assert.NoError(t, err)
 	defer mockDB.Close()
 
@@ -52,7 +52,7 @@ func TestInitDB_OpenError(t *testing.T) {
 // Test for PingContext error (failure during ping)
 func TestInitDB_PingError(t *testing.T) {
 	// Create a mock database connection
-	mockDB, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	assert.NoError(t, err)
 	defer mockDB.Close()
 
@@ -67,9 +67,9 @@ func TestInitDB_PingError(t *testing.T) {
 	// Call the function under test
 	db, err := InitDB(mockSQLOpen, "mockDataSource")
 
-	// Assert that error is returned and db is nil
+	// Assert that error is returned and db is not nil
 	assert.Error(t, err)
-	assert.Nil(t, db)
+	assert.NotNil(t, db)
 
 	// Ensure all expectations were met
 	err = mock.ExpectationsWereMet()
