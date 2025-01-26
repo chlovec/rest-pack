@@ -31,5 +31,5 @@ func initConfig() Config {
 }
 
 func GetDataSourceName() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", Envs.DBUser, Envs.DBPassword, Envs.DBHost, Envs.DBPort, Envs.DBName)
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?checkConnLiveness=false&parseTime=true", Envs.DBUser, Envs.DBPassword, Envs.DBHost, Envs.DBPort, Envs.DBName)
 }

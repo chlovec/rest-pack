@@ -1,4 +1,4 @@
-example:
+run-example:
 	@go run examples/cmd/main.go
 
 test:
