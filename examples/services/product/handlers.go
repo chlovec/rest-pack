@@ -2,6 +2,7 @@ package product
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -32,13 +33,29 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// validate the payload
+	// validate payload
+	if err := utils.Validate.Struct(product); err != nil {
+		error := fmt.Errorf("Validation Error")
+		details := utils.GetValidationError(err)
+		utils.WriteErrorJSON(w, http.StatusBadRequest, error, details)
+		return
+	}
 
 	// use store to create the product on the db
 
 	// Write response
-	// Response should include how to get the new product
-	utils.WriteJSON(w, http.StatusCreated, nil)
+	productID := 123
+	baseURL := "http://example.com/api/v1/products"
+	newProductURL := fmt.Sprintf("%s/%d", baseURL, productID)
+	w.Header().Set("Location", newProductURL)
+
+	// Create a response payload
+	response := map[string]interface{}{
+		"message": "Product created successfully",
+		"id":      productID,
+		"url":     newProductURL,
+	}
+	utils.WriteJSON(w, http.StatusCreated, response)
 }
 
 func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {

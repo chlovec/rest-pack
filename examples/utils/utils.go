@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
+
+var Validate = validator.New()
 
 func ParseJSON(r *http.Request, payload any) error {
 	if r.Body == nil {
@@ -45,4 +49,26 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(v)
+}
+
+func GetValidationError(err error) map[string]string {
+	validationErrors := make(map[string]string)
+	for _, err := range err.(validator.ValidationErrors) {
+		validationErrors[err.Field()] = getValidationMessage(err)
+	}
+	return validationErrors
+}
+
+func getValidationMessage(fe validator.FieldError) string {
+	switch fe.Tag() {
+	case "required":
+		return fmt.Sprintf("'%s' is required", fe.Field())
+	case "email":
+		return fmt.Sprintf("'%s' is invalid", fe.Field())
+	case "min":
+		return fmt.Sprintf("'%s' is less than the required minimum length", fe.Field())
+	case "max":
+		return fmt.Sprintf("'%s' is greater than the required maximum length", fe.Field())
+	}
+	return fmt.Sprintf("%v", fe.Error())
 }
