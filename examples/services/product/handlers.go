@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/chlovec/rest-pack/examples/types"
-	"github.com/chlovec/rest-pack/examples/utils"
+	"github.com/chlovec/rest-pack/utils"
 )
 
 type Handler struct {
