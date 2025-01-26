@@ -6,14 +6,14 @@ import (
 	"net/http"
 
 	"github.com/chlovec/rest-pack/api"
-	db "github.com/chlovec/rest-pack/db/mysql"
+	"github.com/chlovec/rest-pack/db"
 	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/services/product"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
-	logger := log.Default()
-	initServer(logger)
+	initServer(log.Default())
 }
 
 func initServer(logger *log.Logger) {
@@ -22,10 +22,11 @@ func initServer(logger *log.Logger) {
 	apiServer := api.NewAPIServer(addr, "/api/v1", logger)
 
 	// Create db
-	mysqlDB, err := db.InitDB(sql.Open, config.GetDataSourceName())
+	mysqlDB, err := db.InitDB(sql.Open, "mysql", config.GetDataSourceName(), 0)
 	if err != nil {
-		logger.Fatalf("error initializing DB:\n%v", err)
+		logger.Fatalf("error initializing db: %v", err)
 	}
+	log.Println("Initialized DB!")
 
 	// Create product store, product handler and register routes
 	store := product.NewStore(mysqlDB)

@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // Test for successful initialization
@@ -25,7 +27,31 @@ func TestInitDB_Success(t *testing.T) {
 	}
 
 	// Call the function under test with the mocked sqlOpen
-	db, err := InitDB(mockSQLOpen, "mockDataSource")
+	db, err := InitDB(mockSQLOpen, "mysql", "mockDataSource", 0)
+	assert.NoError(t, err)
+	assert.NotNil(t, db)
+
+	// Ensure all expectations were met
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestInitDBWithDuration_Success(t *testing.T) {
+	// Create a mock database connection
+	mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
+	assert.NoError(t, err)
+	defer mockDB.Close()
+
+	// Mock the PingContext behavior to succeed
+	mock.ExpectPing()
+
+	// Override sqlOpen to return the mock database
+	mockSQLOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		return mockDB, nil
+	}
+
+	// Call the function under test with the mocked sqlOpen
+	db, err := InitDB(mockSQLOpen, "mysql", "mockDataSource", 10*time.Second)
 	assert.NoError(t, err)
 	assert.NotNil(t, db)
 
@@ -42,7 +68,7 @@ func TestInitDB_OpenError(t *testing.T) {
 	}
 
 	// Call the function under test
-	db, err := InitDB(mockSQLOpen, "mockDataSource")
+	db, err := InitDB(mockSQLOpen, "mysql", "mockDataSource", 0)
 
 	// Assert that an error is returned and db is nil
 	assert.Error(t, err)
@@ -65,7 +91,7 @@ func TestInitDB_PingError(t *testing.T) {
 	}
 
 	// Call the function under test
-	db, err := InitDB(mockSQLOpen, "mockDataSource")
+	db, err := InitDB(mockSQLOpen, "mysql", "mockDataSource", 10*time.Second)
 
 	// Assert that error is returned and db is not nil
 	assert.Error(t, err)
