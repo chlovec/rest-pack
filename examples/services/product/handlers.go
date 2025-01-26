@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/chlovec/rest-pack/examples/types"
+	"github.com/chlovec/rest-pack/examples/utils"
 )
 
 type Handler struct {
@@ -19,6 +22,23 @@ type Product struct {
 
 func NewHandler(logger *log.Logger) *Handler {
 	return &Handler{}
+}
+
+func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
+	// Parse request body
+	var product types.CreateProductPayload
+	if err := utils.ParseJSON(r, &product); err != nil {
+		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
+		return
+	}
+
+	// validate the payload
+
+	// use store to create the product on the db
+
+	// Write response
+	// Response should include how to get the new product
+	utils.WriteJSON(w, http.StatusCreated, nil)
 }
 
 func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {

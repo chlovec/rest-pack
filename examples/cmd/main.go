@@ -22,6 +22,7 @@ func initServer(logger *log.Logger) {
 	// Register routes
 	handler := product.NewHandler(logger)
 	apiServer.RegisterRoute("/products", handler.ListProducts, http.MethodGet)
+	apiServer.RegisterRoute("/products", handler.CreateProduct, http.MethodPost)
 
 	// start server
 	err := apiServer.Start()
