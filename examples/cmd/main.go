@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -21,15 +22,10 @@ func initServer(logger *log.Logger) {
 	apiServer := api.NewAPIServer(addr, "/api/v1", logger)
 
 	// Create db
-	mysqlDB, err := db.NewSqlStorage("mysql", config.GetDataSourceName())
+	mysqlDB, err := db.InitDB(sql.Open, config.GetDataSourceName())
 	if err != nil {
 		logger.Fatalf("error initializing DB:\n%v", err)
 	}
-
-	err = db.InitDB(mysqlDB)
-	if err != nil {
-		logger.Fatalf("error initializing DB:\n%v", err)
-	} 
 
 	// Create product store, product handler and register routes
 	store := product.NewStore(mysqlDB)

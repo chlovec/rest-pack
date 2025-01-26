@@ -1,43 +1,77 @@
 package db
 
 import (
+	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewSqlStorage(t *testing.T) {
+// Test for successful initialization
+func TestInitDB_Success(t *testing.T) {
 	// Create a mock database connection
-	mockDB, _, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	assert.NoError(t, err)
 	defer mockDB.Close()
 
-	// Mock driver name and data source name
-	driverName := "mysql"
-	dataSourceName := "user:password@tcp(127.0.0.1:3306)/mockdb"
-
-	// Call the function being tested
-	dbConn, err := NewSqlStorage(driverName, dataSourceName)
-
-	// Assertions
-	assert.NoError(t, err)        // Ensure no error occurred
-	assert.NotNil(t, dbConn)      // Ensure the returned connection is not nil
-
-	// Close the database connection
-	err = dbConn.Close()
-	assert.NoError(t, err) // Ensure no error occurred when closing
-}
-
-func TestInitDB(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer db.Close()
-
+	// Mock the PingContext behavior to succeed
 	mock.ExpectPing()
 
-	err = InitDB(db)
+	// Override sqlOpen to return the mock database
+	mockSQLOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		return mockDB, nil
+	}
+
+	// Call the function under test with the mocked sqlOpen
+	db, err := InitDB(mockSQLOpen, "mockDataSource")
 	assert.NoError(t, err)
-	mock.ExpectationsWereMet()
+	assert.NotNil(t, db)
+
+	// Ensure all expectations were met
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+// Test for sql.Open error (failure to open the database)
+func TestInitDB_OpenError(t *testing.T) {
+	// Override sqlOpen to simulate an error
+	mockSQLOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		return nil, errors.New("failed to open database")
+	}
+
+	// Call the function under test
+	db, err := InitDB(mockSQLOpen, "mockDataSource")
+
+	// Assert that an error is returned and db is nil
+	assert.Error(t, err)
+	assert.Nil(t, db)
+}
+
+// Test for PingContext error (failure during ping)
+func TestInitDB_PingError(t *testing.T) {
+	// Create a mock database connection
+	mockDB, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer mockDB.Close()
+
+	// Mock the PingContext behavior to fail
+	mock.ExpectPing().WillReturnError(errors.New("ping failed"))
+
+	// Override sqlOpen to return the mock database
+	mockSQLOpen := func(driverName, dataSourceName string) (*sql.DB, error) {
+		return mockDB, nil
+	}
+
+	// Call the function under test
+	db, err := InitDB(mockSQLOpen, "mockDataSource")
+
+	// Assert that error is returned and db is nil
+	assert.Error(t, err)
+	assert.Nil(t, db)
+
+	// Ensure all expectations were met
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
 }
