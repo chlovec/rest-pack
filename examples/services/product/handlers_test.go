@@ -3,6 +3,7 @@ package product
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -52,5 +53,78 @@ func TestCreateProductHandler(t *testing.T) {
 		}`
 		assert.JSONEq(t, expectedResponse, rr.Body.String())
 		assert.Equal(t, "http://example.com/api/v1/products/1", rr.Header().Get("Location"))
+	})
+
+	t.Run("should fail if DB error", func(t *testing.T) {
+		product := types.CreateProductPayload{
+			Name:        "Test Product",
+			Description: "New product for testing",
+			ImageUrl:    "test/image-url",
+			Price:       22.45,
+			Quantity:    20,
+		}
+
+		mockStore.EXPECT().CreateProduct(product).Return(int64(0), errors.New("DB error"))
+
+		// Create http request
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPost, "/products", bytes.NewReader(body))
+
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.CreateProduct).Methods(http.MethodPost)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		expectedResponse := `{
+			"error": "Internal Server Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should fail request has no payload", func(t *testing.T) {
+		// Create http request
+		req, err := http.NewRequest(http.MethodPost, "/products", nil)
+
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.CreateProduct).Methods(http.MethodPost)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"error": "missing request body"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should fail if payload is invalid", func(t *testing.T) {
+		product := types.CreateProductPayload{}
+
+		// Create http request
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPost, "/products", bytes.NewReader(body))
+
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.CreateProduct).Methods(http.MethodPost)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"details": {
+				"Name": "'Name' is required",
+				"Price": "'Price' is required", 
+				"Quantity": "'Quantity' is required"
+			}, 
+			"error":"Validation Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
 	})
 }
