@@ -14,7 +14,7 @@ type Product struct {
 
 // Stores
 type ProductStore interface {
-	CreateProduct(CreateProductPayload) (int, error)
+	CreateProduct(product CreateProductPayload) (int64, error)
 }
 
 // Payloads
