@@ -11,6 +11,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type APIServerInterface interface {
+	RegisterRoute(path string, handler func(http.ResponseWriter, *http.Request), methods ...string)
+	Start(timeouts ...time.Duration) error
+}
+
 type APIServer struct {
 	server       *http.Server
 	apiRouter    *mux.Router
