@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/chlovec/rest-pack/api"
 	"github.com/chlovec/rest-pack/db"
@@ -13,20 +14,35 @@ import (
 )
 
 func main() {
-	initServer(log.Default())
-}
-
-func initServer(logger *log.Logger) {
-	// Initialize server
-	addr := config.Envs.ServerAddress
-	apiServer := api.NewAPIServer(addr, "/api/v1", logger)
-
-	// Create db
-	mysqlDB, err := db.InitDB(sql.Open, "mysql", config.GetDataSourceName(), 0)
+	// initServer(log.Default())
+	logger := log.Default()
+	apiServer, err := initServer(
+		sql.Open, 
+		config.Envs.ServerAddress, 
+		config.GetDataSourceName(), 
+		0,
+		logger,
+	)
 	if err != nil {
 		logger.Fatalf("error initializing db: %v", err)
 	}
-	log.Println("Initialized DB!")
+	startServer(apiServer, logger)
+}
+
+func initServer(
+	sqlOpen func(driverName, dataSourceName string) (*sql.DB, error), serverAddress string, 
+	dataSourceName string, 
+	timeout time.Duration, 
+	logger *log.Logger,
+) (*api.APIServer, error) {
+	apiServer := api.NewAPIServer(serverAddress, "/api/v1", logger)
+
+	// Create db
+	mysqlDB, err := db.InitDB(sqlOpen, "mysql", dataSourceName, timeout)
+	if err != nil {
+		return nil, err
+	}
+	logger.Println("Initialized DB!")
 
 	// Create product store, product handler and register routes
 	store := product.NewStore(mysqlDB)
@@ -34,9 +50,12 @@ func initServer(logger *log.Logger) {
 	apiServer.RegisterRoute("/products", handler.ListProducts, http.MethodGet)
 	apiServer.RegisterRoute("/products", handler.CreateProduct, http.MethodPost)
 
-	// start server
-	err = apiServer.Start()
+	return apiServer, nil
+}
+
+func startServer(apiServer *api.APIServer, logger *log.Logger) {
+	err := apiServer.Start()
 	if err != nil {
-		log.Fatalf("error starting server:\n%v", err)
+		logger.Fatalf("error starting server:\n%v", err)
 	}
 }
