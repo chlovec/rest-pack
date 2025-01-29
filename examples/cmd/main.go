@@ -14,6 +14,10 @@ import (
 )
 
 func main() {
+	// initialize config
+	config.InitConfig()
+
+	// start server
 	logger := log.Default()
 	apiServer := api.NewAPIServer(config.Envs.ServerAddress, "/api/v1", logger)
 	err := run(apiServer, sql.Open, config.GetDataSourceName(), logger, 0)

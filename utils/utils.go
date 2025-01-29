@@ -2,7 +2,9 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -17,6 +19,9 @@ func ParseJSON(r *http.Request, payload any) error {
 
 	defer r.Body.Close() // Always close the body to avoid resource leaks
 	if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
+		if errors.Is(err, io.EOF) {
+			return fmt.Errorf("missing request body")
+		}
 		return fmt.Errorf("invalid JSON: %w", err)
 	}
 
