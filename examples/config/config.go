@@ -16,11 +16,13 @@ type Config struct {
 	ServerAddress string
 }
 
-var Envs = initConfig()
+var Envs Config
 
-func initConfig() Config {
+func InitConfig() {
+	// Note: Best practice .env file should be in the root folder.
+	// It's put in the examples folder as the root directory these examples.
 	godotenv.Load("examples/.env")
-	return Config {
+	Envs = Config {
 		DBHost:               os.Getenv("DB_HOST"),
 		DBPort:               os.Getenv("DB_PORT"),
 		DBUser:               os.Getenv("DB_USER"),
