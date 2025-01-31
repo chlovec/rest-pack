@@ -61,14 +61,14 @@ func TestListProduct(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity", "createdAt"})
 
 		mock.ExpectQuery("SELECT \\* FROM products ORDER BY id ASC LIMIT \\? OFFSET \\?").
-			WithArgs(1000, 0).
+			WithArgs(50, 203).
 			WillReturnRows(rows)
 
-		actualProducts, err := store.ListProducts(1000, 0)
+		actualProducts, err := store.ListProducts(50, 203)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, actualProducts)
-		assert.EqualValues(t, []*types.Product{}, actualProducts)
+		assert.Len(t, actualProducts, 0)
 	})
 
 	t.Run("should return empty list if there is no product", func(t *testing.T) {
