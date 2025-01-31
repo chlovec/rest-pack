@@ -2,8 +2,10 @@ package product
 
 import (
 	"errors"
+	"log"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/chlovec/rest-pack/examples/types"
@@ -13,6 +15,104 @@ import (
 const DbError string = "db error"
 const One int64 = 1
 
+var prodA = types.Product{
+	ID:          1,
+	Name:        "Product A",
+	Description: "New product for testing",
+	ImageUrl:    "test/image-url",
+	Price:       22.20,
+	Quantity:    20,
+	CreatedAt:   time.Date(2024, 12, 28, 0, 0, 0, 0, time.UTC),
+}
+var prodB = types.Product{
+	ID:          2,
+	Name:        "Product B",
+	Description: "",
+	ImageUrl:    "",
+	Price:       15.86,
+	Quantity:    1000,
+	CreatedAt:   time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+}
+
+func TestListProduct(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	store := NewStore(db)
+
+	t.Run("should list products", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity", "createdAt"}).
+			AddRow(prodA.ID, prodA.Name, prodA.Description, prodA.ImageUrl, prodA.Price, prodA.Quantity, prodA.CreatedAt).
+			AddRow(prodB.ID, prodB.Name, prodB.Description, prodB.ImageUrl, prodB.Price, prodB.Quantity, prodB.CreatedAt)
+
+		mock.ExpectQuery("SELECT \\* FROM products ORDER BY id ASC LIMIT \\? OFFSET \\?").
+			WithArgs(1000, 0).
+			WillReturnRows(rows)
+
+		actualProducts, err := store.ListProducts(1000, 0)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, actualProducts)
+		assert.EqualValues(t, []*types.Product{&prodA, &prodB}, actualProducts)
+	})
+
+	t.Run("should return empty list", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity", "createdAt"})
+
+		mock.ExpectQuery("SELECT \\* FROM products ORDER BY id ASC LIMIT \\? OFFSET \\?").
+			WithArgs(1000, 0).
+			WillReturnRows(rows)
+
+		actualProducts, err := store.ListProducts(1000, 0)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, actualProducts)
+		assert.EqualValues(t, []*types.Product{}, actualProducts)
+	})
+
+	t.Run("should return empty list if there is no product", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity"})
+
+		mock.ExpectQuery("SELECT \\* FROM products ORDER BY id ASC LIMIT \\? OFFSET \\?").
+			WithArgs(1000, 0).
+			WillReturnRows(rows)
+
+		products, err := store.ListProducts(0, 0)
+
+		assert.NoError(t, err)
+		log.Printf("products \n%v", products)
+		assert.Len(t, products, 0)
+	})
+
+	t.Run("should return db error", func(t *testing.T) {
+		mock.ExpectQuery("SELECT \\* FROM products ORDER BY id ASC LIMIT \\? OFFSET \\?").
+			WithArgs(1000, 0).
+			WillReturnError(errors.New(DbError))
+
+		product, err := store.ListProducts(0, 0)
+
+		assert.Error(t, err)
+		assert.Equal(t, DbError, err.Error())
+		assert.Nil(t, product)
+	})
+
+	t.Run("should return scan error", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "name", "description", "image_url", "price", "quantity", "created_at"})
+		rows.AddRow(1, "Product A", "Description", "image.jpg", 100.00, 10, "invalid_date")
+
+		mock.ExpectQuery("SELECT \\* FROM products ORDER BY id ASC LIMIT \\? OFFSET \\?").
+			WithArgs(1000, 0).
+			WillReturnRows(rows)
+
+		products, err := store.ListProducts(0, 0)
+		expectedError := "sql: Scan error on column index 6, name \"created_at\": unsupported Scan, storing driver.Value type string into type *time.Time"
+		assert.Error(t, err)
+		assert.Equal(t, expectedError, err.Error())
+		assert.Nil(t, products)
+	})
+}
+
 func TestGetProduct(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
@@ -21,8 +121,8 @@ func TestGetProduct(t *testing.T) {
 	store := NewStore(db)
 
 	t.Run("should get product", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity"}).
-			AddRow(1, "Test Product", "New product for testing", "test/image-url", 22.20, 20)
+		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity", "createdAt"}).
+			AddRow(prodA.ID, prodA.Name, prodA.Description, prodA.ImageUrl, prodA.Price, prodA.Quantity, prodA.CreatedAt)
 
 		mock.ExpectQuery("SELECT \\* FROM products WHERE id = \\? LIMIT 1").
 			WithArgs(1).
@@ -32,10 +132,11 @@ func TestGetProduct(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, product)
+		assert.EqualValues(t, &prodA, product)
 	})
 
 	t.Run("should return nil if product does not exist", func(t *testing.T) {
-		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity"})
+		rows := sqlmock.NewRows([]string{"id", "name", "description", "imageUrl", "price", "quantity", "createdAt"})
 
 		mock.ExpectQuery("SELECT \\* FROM products WHERE id = \\? LIMIT 1").
 			WithArgs(1).

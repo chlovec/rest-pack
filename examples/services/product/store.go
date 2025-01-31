@@ -31,7 +31,7 @@ func (s *Store) GetProduct(id int) (*types.Product, error) {
 
 func (s *Store) ListProducts(limit int, offset int) ([]*types.Product, error) {
 	if limit <= 0 || limit > 1000 {
-		limit = 100
+		limit = 1000
 	}
 
 	query := "SELECT * FROM products ORDER BY id ASC LIMIT ? OFFSET ?"
@@ -93,6 +93,7 @@ func scanProductRow(scanner interface{ Scan(dest ...interface{}) error }) (*type
 		&product.ImageUrl,
 		&product.Price,
 		&product.Quantity,
+		&product.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
