@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/services/mocks"
@@ -17,6 +18,111 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
+
+func TestListProductsHandler(t *testing.T) {
+	var prodA = types.Product{
+		ID:          1,
+		Name:        "Product A",
+		Description: "New product for testing",
+		ImageUrl:    "test/image-url",
+		Price:       22.20,
+		Quantity:    20,
+		CreatedAt:   time.Date(2024, 12, 28, 0, 0, 0, 0, time.UTC),
+	}
+	var prodB = types.Product{
+		ID:          2,
+		Name:        "Product B",
+		Description: "",
+		ImageUrl:    "",
+		Price:       15.86,
+		Quantity:    1000,
+		CreatedAt:   time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+	
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockProductStore(ctrl)
+	handler := NewHandler(log.Default(), mockStore)
+
+	t.Run("should list products", func(t *testing.T) {
+		expectedProducts := []*types.Product{&prodA, &prodB}
+		mockStore.EXPECT().ListProducts(1000, 0).Return(expectedProducts, nil)
+
+		req, err := http.NewRequest(http.MethodGet, "/products", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.ListProducts)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var actualProducts []*types.Product
+		err = json.Unmarshal(rr.Body.Bytes(), &actualProducts)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedProducts, actualProducts)
+	})
+
+	t.Run("should return empty list", func(t *testing.T) {
+		expectedProducts := []*types.Product{}
+		mockStore.EXPECT().ListProducts(1000, 0).Return(expectedProducts, nil)
+
+		req, err := http.NewRequest(http.MethodGet, "/products", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.ListProducts)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var actualProducts []*types.Product
+		err = json.Unmarshal(rr.Body.Bytes(), &actualProducts)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedProducts, actualProducts)
+	})
+
+	t.Run("should handle page size and number", func(t *testing.T) {
+		expectedProducts := []*types.Product{&prodB}
+		mockStore.EXPECT().ListProducts(100, 800).Return(expectedProducts, nil)
+
+		req, err := http.NewRequest(http.MethodGet, "/products?pagesize=100&pagenumber=9", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.ListProducts)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var actualProducts []*types.Product
+		err = json.Unmarshal(rr.Body.Bytes(), &actualProducts)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedProducts, actualProducts)
+	})
+
+	t.Run("should return internal server error", func(t *testing.T) {
+		mockStore.EXPECT().ListProducts(100, 800).Return(nil, errors.New(DbError))
+
+		req, err := http.NewRequest(http.MethodGet, "/products?pagesize=100&pagenumber=9", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router := mux.NewRouter()
+		router.HandleFunc("/products", handler.ListProducts)
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		expectedResponse := `{
+			"error": "Internal Server Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+}
 
 func TestCreateProductHandler(t *testing.T) {
 	// Set up test environment variables

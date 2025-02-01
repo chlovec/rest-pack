@@ -38,13 +38,13 @@ func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	// Parse page size
-	pageSize, err := strconv.Atoi(query.Get("pageSize"))
+	pageSize, err := strconv.Atoi(query.Get("pagesize"))
 	if err != nil || pageSize <= 0 {
 		pageSize = defaultPageSize
 	}
 
 	// Parse page number
-	pageNum, err := strconv.Atoi(query.Get("pageNumber"))
+	pageNum, err := strconv.Atoi(query.Get("pagenumber"))
 	if err != nil || pageNum < 1 {
 		pageNum = defaultPageNum
 	} else {
@@ -52,7 +52,7 @@ func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch products
-	products, err := h.store.ListProducts(pageSize, pageNum)
+	products, err := h.store.ListProducts(pageSize, pageNum * pageSize)
 	if err != nil {
 		utils.WriteInternalServerError(w, "", nil)
 		return
