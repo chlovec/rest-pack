@@ -9,6 +9,7 @@ import (
 	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/types"
 	"github.com/chlovec/rest-pack/utils"
+	"github.com/gorilla/mux"
 )
 
 type Handler struct {
@@ -60,6 +61,27 @@ func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 
 	// Send response
 	utils.WriteJSON(w, http.StatusOK, products)
+}
+
+func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	productId, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.WriteBadRequest(w, "", nil)
+		return
+	}
+
+	product, err := h.store.GetProduct(productId)
+	if err != nil {
+		utils.WriteInternalServerError(w, "", nil)
+		return
+	}
+
+	if product == nil {
+		utils.WriteNotFound(w, "", nil)
+		return
+	}
+	utils.WriteJSON(w, http.StatusOK, product)
 }
 
 func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {

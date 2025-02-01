@@ -71,6 +71,13 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	return json.NewEncoder(w).Encode(v)
 }
 
+func WriteNotFound(w http.ResponseWriter, errorMessage string, details any) {
+	if errorMessage == "" {
+		errorMessage = "Not Found"
+	}
+	writeError(w, http.StatusNotFound, errorMessage, details)
+}
+
 func WriteLog(logger *log.Logger, category string, details any) {
 	log, marshalErr := createJsonMessage("category", category, "message", details)
 	if marshalErr != nil {
