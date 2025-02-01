@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/types"
 	"github.com/chlovec/rest-pack/utils"
 )
@@ -37,7 +38,7 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// validate payload
+	// Validate payload
 	if err := utils.Validate.Struct(product); err != nil {
 		error := fmt.Errorf("Validation Error")
 		details := utils.GetValidationError(err)
@@ -45,10 +46,7 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// use store to create the product on the db
-	
-
-	// Write response
+	// Create product
 	productID, err := h.store.CreateProduct(product);
 	if err != nil {
 		h.logger.Printf("error creating product: %v", err)
@@ -57,11 +55,10 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseURL := "http://example.com/api/v1/products"
-	newProductURL := fmt.Sprintf("%s/%d", baseURL, productID)
+	// Write response
+	newProductURL := fmt.Sprintf("%s%s/products/%d", config.Envs.BaseUrl, config.Envs.PathPrefix, productID)
 	w.Header().Set("Location", newProductURL)
 
-	// Create a response payload
 	response := map[string]interface{}{
 		"message": "Product created successfully",
 		"id":      productID,

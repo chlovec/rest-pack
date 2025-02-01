@@ -14,6 +14,8 @@ type Config struct {
 	DBPassword 	  string
 	DBName        string
 	ServerAddress string
+	BaseUrl       string
+	PathPrefix    string
 }
 
 var Envs Config
@@ -21,7 +23,7 @@ var Envs Config
 func InitConfig() {
 	// Note: Best practice .env file should be in the root folder.
 	// It's put in the examples folder as the root directory these examples.
-	godotenv.Load("examples/.env")
+	godotenv.Load()
 	Envs = Config {
 		DBHost:               os.Getenv("DB_HOST"),
 		DBPort:               os.Getenv("DB_PORT"),
@@ -29,6 +31,8 @@ func InitConfig() {
 		DBPassword:           os.Getenv("DB_PASSWORD"),
 		DBName:               os.Getenv("DB_NAME"),
 		ServerAddress:        os.Getenv("SERVER_ADDR"),
+		BaseUrl:              os.Getenv("BASE_URL"),
+		PathPrefix:           os.Getenv("PATH_PREFIX"),
 	}
 }
 

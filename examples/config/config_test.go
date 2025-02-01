@@ -15,6 +15,8 @@ func TestLoadConfig(t *testing.T) {
 	os.Setenv("DB_PASSWORD", "testpass")
 	os.Setenv("DB_NAME", "testdb")
 	os.Setenv("SERVER_ADDR", "127.0.0.1:8080")
+	os.Setenv("BASE_URL", "http://example.com")
+	os.Setenv("PATH_PREFIX", "/api/v1")
 
 	// Load the configuration
 	InitConfig()
@@ -25,6 +27,8 @@ func TestLoadConfig(t *testing.T) {
 	assert.Equal(t, "testpass", Envs.DBPassword)
 	assert.Equal(t, "testdb", Envs.DBName)
 	assert.Equal(t, "127.0.0.1:8080", Envs.ServerAddress)
+	assert.Equal(t, "http://example.com", Envs.BaseUrl)
+	assert.Equal(t, "/api/v1", Envs.PathPrefix)
 }
 
 func TestGetDataSourceName(t *testing.T) {

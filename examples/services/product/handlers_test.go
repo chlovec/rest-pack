@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/services/mocks"
 	"github.com/chlovec/rest-pack/examples/types"
 	"github.com/golang/mock/gomock"
@@ -17,6 +19,11 @@ import (
 )
 
 func TestCreateProductHandler(t *testing.T) {
+	// Set up test environment variables
+	os.Setenv("BASE_URL", "http://example.com")
+	os.Setenv("PATH_PREFIX", "/api/v1")
+	config.InitConfig()
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
