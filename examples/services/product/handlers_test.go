@@ -13,9 +13,9 @@ import (
 	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/services/mocks"
 	"github.com/chlovec/rest-pack/examples/types"
-	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCreateProductHandler(t *testing.T) {
@@ -27,7 +27,7 @@ func TestCreateProductHandler(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockStore := prod_mocks.NewMockProductStore(ctrl)
+	mockStore := mocks.NewMockProductStore(ctrl)
 	handler := NewHandler(log.Default(), mockStore)
 
 	t.Run("should create new product", func(t *testing.T) {

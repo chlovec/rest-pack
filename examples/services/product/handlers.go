@@ -1,10 +1,10 @@
 package product
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/chlovec/rest-pack/examples/config"
 	"github.com/chlovec/rest-pack/examples/types"
@@ -30,28 +30,57 @@ func NewHandler(logger *log.Logger, store types.ProductStore) *Handler {
 	}
 }
 
+func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
+	// Default values
+	const defaultPageSize = 1000
+	const defaultPageNum = 0
+
+	query := r.URL.Query()
+
+	// Parse page size
+	pageSize, err := strconv.Atoi(query.Get("pageSize"))
+	if err != nil || pageSize <= 0 {
+		pageSize = defaultPageSize
+	}
+
+	// Parse page number
+	pageNum, err := strconv.Atoi(query.Get("pageNumber"))
+	if err != nil || pageNum < 1 {
+		pageNum = defaultPageNum
+	} else {
+		pageNum-- // Convert to zero-based index
+	}
+
+	// Fetch products
+	products, err := h.store.ListProducts(pageSize, pageNum)
+	if err != nil {
+		utils.WriteInternalServerError(w, "", nil)
+		return
+	}
+
+	// Send response
+	utils.WriteJSON(w, http.StatusOK, products)
+}
+
 func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var product types.CreateProductPayload
 	if err := utils.ParseJSON(r, &product); err != nil {
-		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
+		utils.WriteBadRequest(w, "missing request body", nil)
 		return
 	}
 
 	// Validate payload
 	if err := utils.Validate.Struct(product); err != nil {
-		error := fmt.Errorf("Validation Error")
 		details := utils.GetValidationError(err)
-		utils.WriteErrorJSON(w, http.StatusBadRequest, error, details)
+		utils.WriteBadRequest(w, "Validation Error", details)
 		return
 	}
 
 	// Create product
 	productID, err := h.store.CreateProduct(product);
 	if err != nil {
-		h.logger.Printf("error creating product: %v", err)
-		error := fmt.Errorf("Internal Server Error")
-		utils.WriteErrorJSON(w, http.StatusInternalServerError, error, nil)
+		utils.WriteInternalServerError(w, "", nil)
 		return
 	}
 
@@ -67,28 +96,66 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, response)
 }
 
-func (h *Handler) ListProducts(w http.ResponseWriter, r *http.Request) {
-	products := []Product{
-		{
-			ID:    1,
-			Name:  "Sample Product",
-			Price: 99.99,
-			Qty:   4,
-		},
-		{
-			ID:    2,
-			Name:  "Real Product",
-			Price: 100.23,
-			Qty:   22,
-		},
-	}
+// func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+// 	// Parse request body
+// 	var product types.UpdateProductPayload
+// 	if err := utils.ParseJSON(r, &product); err != nil {
+// 		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
+// 		return
+// 	}
 
-	// Serialize the product to JSON
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(products); err != nil {
-		// Handle JSON encoding errors
-		h.logger.Println("Error encoding products to JSON:", err)
-		http.Error(w, "Failed to retrieve products", http.StatusInternalServerError)
-		return
-	}
-}
+// 	// Validate payload
+// 	if err := utils.Validate.Struct(product); err != nil {
+// 		error := fmt.Errorf("Validation Error")
+// 		details := utils.GetValidationError(err)
+// 		utils.WriteErrorJSON(w, http.StatusBadRequest, error, details)
+// 		return
+// 	}
+
+// 	// Create product
+// 	err := h.store.UpdateProduct(product);
+// 	if err != nil {
+// 		h.logger.Printf("error creating product: %v", err)
+// 		error := fmt.Errorf("Internal Server Error")
+// 		utils.WriteErrorJSON(w, http.StatusInternalServerError, error, nil)
+// 		return
+// 	}
+
+// 	// Write response
+// 	response := map[string]interface{}{
+// 		"message": "Product updated successfully",
+// 	}
+// 	utils.WriteJSON(w, http.StatusCreated, response)
+// }
+
+// func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+// 	// Parse request body
+// 	productIDStr := r.PathValue("id")
+// 	if productIDStr == "" {
+// 		err := fmt.Errorf("id is required")
+// 		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
+// 		return
+// 	}
+
+// 	productID, err := strconv.Atoi(productIDStr)
+// 	if err != nil {
+// 		err := fmt.Errorf("Invalid productid: %s", productIDStr)
+// 		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
+// 		return
+// 	}
+
+// 	// Create product
+// 	err = h.store.DeleteProduct(productID);
+// 	if err != nil {
+// 		h.logger.Printf("error deleting product with id `%d`: ", productID, err)
+// 		error := fmt.Errorf("Internal Server Error")
+// 		utils.WriteErrorJSON(w, http.StatusInternalServerError, error, nil)
+// 		return
+// 	}
+
+// 	// Write response
+// 	response := map[string]interface{}{
+// 		"message": "Product updated successfully",
+// 	}
+// 	utils.WriteJSON(w, http.StatusCreated, response)
+// }

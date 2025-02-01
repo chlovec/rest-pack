@@ -19,7 +19,7 @@ func main() {
 
 	// start server
 	logger := log.Default()
-	apiServer := api.NewAPIServer(config.Envs.ServerAddress, "/api/v1", logger)
+	apiServer := api.NewAPIServer(config.Envs.ServerAddress, config.Envs.PathPrefix, logger)
 	err := run(apiServer, sql.Open, config.GetDataSourceName(), logger, 0)
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)

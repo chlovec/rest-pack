@@ -15,6 +15,10 @@ type Product struct {
 // Stores
 type ProductStore interface {
 	CreateProduct(product CreateProductPayload) (int64, error)
+	UpdateProduct(product UpdateProductPayload) error
+	DeleteProduct(id int) error
+	GetProduct(id int) (*Product, error)
+	ListProducts(limit int, offset int) ([]*Product, error)
 }
 
 // Payloads
