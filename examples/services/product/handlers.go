@@ -88,7 +88,7 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var product types.CreateProductPayload
 	if err := utils.ParseJSON(r, &product); err != nil {
-		utils.WriteBadRequest(w, "missing request body", nil)
+		utils.WriteBadRequest(w, "", nil)
 		return
 	}
 
@@ -122,24 +122,21 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 // 	// Parse request body
 // 	var product types.UpdateProductPayload
 // 	if err := utils.ParseJSON(r, &product); err != nil {
-// 		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
+// 		utils.WriteBadRequest(w, "", nil)
 // 		return
 // 	}
 
 // 	// Validate payload
 // 	if err := utils.Validate.Struct(product); err != nil {
-// 		error := fmt.Errorf("Validation Error")
 // 		details := utils.GetValidationError(err)
-// 		utils.WriteErrorJSON(w, http.StatusBadRequest, error, details)
+// 		utils.WriteBadRequest(w, "Validation Error", details)
 // 		return
 // 	}
 
 // 	// Create product
 // 	err := h.store.UpdateProduct(product);
 // 	if err != nil {
-// 		h.logger.Printf("error creating product: %v", err)
-// 		error := fmt.Errorf("Internal Server Error")
-// 		utils.WriteErrorJSON(w, http.StatusInternalServerError, error, nil)
+// 		utils.WriteInternalServerError(w, "", nil)
 // 		return
 // 	}
 
@@ -150,34 +147,39 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 // 	utils.WriteJSON(w, http.StatusCreated, response)
 // }
 
-// func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-// 	// Parse request body
-// 	productIDStr := r.PathValue("id")
-// 	if productIDStr == "" {
-// 		err := fmt.Errorf("id is required")
-// 		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
-// 		return
-// 	}
+func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	// Parse request body
+	productID, err := GetProductId(r)
+	if err != nil {
+		utils.WriteBadRequest(w, "", nil)
+		return
+	}
 
-// 	productID, err := strconv.Atoi(productIDStr)
-// 	if err != nil {
-// 		err := fmt.Errorf("Invalid productid: %s", productIDStr)
-// 		utils.WriteErrorJSON(w, http.StatusBadRequest, err, nil)
-// 		return
-// 	}
+	// Check that product exists
+	product, err := h.store.GetProduct(productID)
+	if err != nil {
+		utils.WriteInternalServerError(w, "", nil)
+		return
+	} else if product == nil {
+		utils.WriteBadRequest(w, "", nil)
+		return
+	}
 
-// 	// Create product
-// 	err = h.store.DeleteProduct(productID);
-// 	if err != nil {
-// 		h.logger.Printf("error deleting product with id `%d`: ", productID, err)
-// 		error := fmt.Errorf("Internal Server Error")
-// 		utils.WriteErrorJSON(w, http.StatusInternalServerError, error, nil)
-// 		return
-// 	}
+	// Create product
+	err = h.store.DeleteProduct(productID);
+	if err != nil {
+		utils.WriteInternalServerError(w, "", nil)
+		return
+	}
 
-// 	// Write response
-// 	response := map[string]interface{}{
-// 		"message": "Product updated successfully",
-// 	}
-// 	utils.WriteJSON(w, http.StatusCreated, response)
-// }
+	// Write response
+	response := map[string]interface{}{
+		"message": "Product updated successfully",
+	}
+	utils.WriteJSON(w, http.StatusNoContent, response)
+}
+
+func GetProductId(r *http.Request) (int, error) {
+	vars := mux.Vars(r)
+	return strconv.Atoi(vars["id"])
+}

@@ -269,7 +269,7 @@ func TestCreateProductHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 		expectedResponse := `{
-			"error": "missing request body"
+			"error": "Bad Request"
 		}`
 		assert.JSONEq(t, expectedResponse, rr.Body.String())
 	})
@@ -296,6 +296,96 @@ func TestCreateProductHandler(t *testing.T) {
 				"Quantity": "'Quantity' is required"
 			}, 
 			"error":"Validation Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+}
+
+func TestDeleteProductHandler(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockProductStore(ctrl)
+
+	handler := NewHandler(log.Default(), mockStore)
+	router := mux.NewRouter()
+	router.HandleFunc("/products/{id}", handler.DeleteProduct).Methods(http.MethodDelete)
+
+	t.Run("should delete product", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(&prodA, nil)
+		mockStore.EXPECT().DeleteProduct(1).Return(nil)
+
+		req, err := http.NewRequest(http.MethodDelete, "/products/1", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+		expectedResponse := `{
+			"message": "Product updated successfully"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return internal server error if store fails to delete product", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(&prodA, nil)
+		mockStore.EXPECT().DeleteProduct(1).Return(errors.New(DbError))
+
+		req, err := http.NewRequest(http.MethodDelete, "/products/1", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		expectedResponse := `{
+			"error": "Internal Server Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return bad request if id is invalid", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, "/products/Abc", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"error": "Bad Request"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return internal server error if get product returns error", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(nil, errors.New(DbError))
+
+		req, err := http.NewRequest(http.MethodDelete, "/products/1", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		expectedResponse := `{
+			"error": "Internal Server Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return bad request if product does not exist", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(nil, nil)
+		req, err := http.NewRequest(http.MethodDelete, "/products/1", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"error": "Bad Request"
 		}`
 		assert.JSONEq(t, expectedResponse, rr.Body.String())
 	})
