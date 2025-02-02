@@ -118,37 +118,55 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusCreated, response)
 }
 
-// func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
-// 	// Parse request body
-// 	var product types.UpdateProductPayload
-// 	if err := utils.ParseJSON(r, &product); err != nil {
-// 		utils.WriteBadRequest(w, "", nil)
-// 		return
-// 	}
+func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	// Parse request param
+	productID, err := GetProductId(r)
+	if err != nil {
+		utils.WriteBadRequest(w, "", nil)
+		return
+	}
 
-// 	// Validate payload
-// 	if err := utils.Validate.Struct(product); err != nil {
-// 		details := utils.GetValidationError(err)
-// 		utils.WriteBadRequest(w, "Validation Error", details)
-// 		return
-// 	}
+	// Parse request body
+	var product types.UpdateProductPayload
+	err = utils.ParseJSON(r, &product)
+	if err != nil || product.ID != productID {
+		utils.WriteBadRequest(w, "", nil)
+		return
+	}
 
-// 	// Create product
-// 	err := h.store.UpdateProduct(product);
-// 	if err != nil {
-// 		utils.WriteInternalServerError(w, "", nil)
-// 		return
-// 	}
+	// Validate payload
+	if err := utils.Validate.Struct(product); err != nil {
+		details := utils.GetValidationError(err)
+		utils.WriteBadRequest(w, "Validation Error", details)
+		return
+	}
 
-// 	// Write response
-// 	response := map[string]interface{}{
-// 		"message": "Product updated successfully",
-// 	}
-// 	utils.WriteJSON(w, http.StatusCreated, response)
-// }
+	// Check that product exists
+	existingProduct, err := h.store.GetProduct(productID)
+	if err != nil {
+		utils.WriteInternalServerError(w, "", nil)
+		return
+	} else if existingProduct == nil {
+		utils.WriteBadRequest(w, "", nil)
+		return
+	}
+
+	// Update product
+	err = h.store.UpdateProduct(product);
+	if err != nil {
+		utils.WriteInternalServerError(w, "", nil)
+		return
+	}
+
+	// Write response
+	response := map[string]interface{}{
+		"message": "Product updated successfully",
+	}
+	utils.WriteJSON(w, http.StatusNoContent, response)
+}
 
 func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-	// Parse request body
+	// Parse request param
 	productID, err := GetProductId(r)
 	if err != nil {
 		utils.WriteBadRequest(w, "", nil)
@@ -174,7 +192,7 @@ func (h *Handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	// Write response
 	response := map[string]interface{}{
-		"message": "Product updated successfully",
+		"message": "Product deleted successfully",
 	}
 	utils.WriteJSON(w, http.StatusNoContent, response)
 }

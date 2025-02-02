@@ -301,6 +301,146 @@ func TestCreateProductHandler(t *testing.T) {
 	})
 }
 
+func TestUpdateProductHandler(t *testing.T) {
+	product := types.UpdateProductPayload{
+		ID:          1,
+		Name:        "Test Update Product",
+		Description: "Updated product for testing",
+		ImageUrl:    "test/image-url-updated",
+		Price:       22.45,
+		Quantity:    20,
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStore := mocks.NewMockProductStore(ctrl)
+	handler := NewHandler(log.Default(), mockStore)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/products/{id}", handler.UpdateProduct).Methods(http.MethodPut)
+
+	t.Run("should update product if it exists", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(&prodA, nil)
+		mockStore.EXPECT().UpdateProduct(product).Return(nil)
+
+		// Create http request
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPut, "/products/1", bytes.NewReader(body))
+		assert.NoError(t, err)
+
+		router.ServeHTTP(rr, req)
+		assert.Equal(t, http.StatusNoContent, rr.Code)
+		expectedResponse := `{
+			"message": "Product updated successfully"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return bad request if id is invalid", func(t *testing.T) {
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPut, "/products/Abc", bytes.NewReader(body))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"error": "Bad Request"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return internal server error if get product returns error", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(nil, errors.New(DbError))
+
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPut, "/products/1", bytes.NewReader(body))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		expectedResponse := `{
+			"error": "Internal Server Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return internal server error if update product returns error", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(&prodA, nil)
+		mockStore.EXPECT().UpdateProduct(product).Return(errors.New(DbError))
+
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPut, "/products/1", bytes.NewReader(body))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		expectedResponse := `{
+			"error": "Internal Server Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return bad request if product does not exist", func(t *testing.T) {
+		mockStore.EXPECT().GetProduct(1).Return(nil, nil)
+
+		body, _ := json.Marshal(product)
+		req, err := http.NewRequest(http.MethodPut, "/products/1", bytes.NewReader(body))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"error": "Bad Request"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return bad request if request body is not found", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPut, "/products/1", nil)
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"error": "Bad Request"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+
+	t.Run("should return validation error if request body is invalid", func(t *testing.T) {
+		updateProduct := types.UpdateProductPayload {ID: 1}
+		body, _ := json.Marshal(updateProduct)
+		req, err := http.NewRequest(http.MethodPut, "/products/1", bytes.NewReader(body))
+		assert.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		expectedResponse := `{
+			"details": {
+				"Name": "'Name' is required",
+				"Price": "'Price' is required", 
+				"Quantity": "'Quantity' is required"
+			}, 
+			"error":"Validation Error"
+		}`
+		assert.JSONEq(t, expectedResponse, rr.Body.String())
+	})
+}
+
 func TestDeleteProductHandler(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -323,7 +463,7 @@ func TestDeleteProductHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusNoContent, rr.Code)
 		expectedResponse := `{
-			"message": "Product updated successfully"
+			"message": "Product deleted successfully"
 		}`
 		assert.JSONEq(t, expectedResponse, rr.Body.String())
 	})
